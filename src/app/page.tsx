@@ -1,113 +1,229 @@
-import Image from "next/image";
+"use client"
+import "animate.css";
+import Link from 'next/link';
+import router from 'next/router';
+import { useState, useEffect } from 'react';
+
+
+
+interface Items {
+  id: string;
+  name: string;
+
+
+}
 
 export default function Home() {
+  const [items, setItems] = useState<Items[]>([]);
+  const [newItem, setNewItem] = useState<Items>({ id: '', name: '' });
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string>('');
+  const [newItemModal, setNewItemModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Items | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+
+
+
+  useEffect(() => {
+    fetch('http://localhost:5000/items')
+      .then(response => response.json())
+      .then(data => setItems(data))
+      .catch(error => console.error('Error fetching users:', error));
+  }, []);
+
+  const handleEditUser = (item: Items) => {
+    localStorage.setItem('itemToEdit', JSON.stringify(item));
+  };
+
+
+  const handleAddItem = () => {
+    fetch('http://localhost:5000/items', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newItem),
+    })
+      .then(response => response.json())
+      .then(data => {
+        setItems([...items, data]);
+        setNewItem({ id: '', name: '' });
+        setNewItemModal(false);
+
+      })
+      .catch(error => console.error('Error adding user:', error));
+  };
+
+  const handleDeleteItem = () => {
+    fetch(`http://localhost:5000/items/${itemToDelete}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: itemToDelete })
+    })
+      .then(response => {
+        if (response.ok) {
+          setItems(prevItems => prevItems.filter(item => item.id !== itemToDelete));
+          setItemToDelete('');
+          setDeleteModalOpen(false); // Chiudi il modal dopo aver eliminato l'utente
+        } else {
+          throw new Error('Failed to delete item');
+        }
+      })
+      .catch(error => console.error('Error deleting user:', error));
+  };
+
+  const handleDetailsClick = (item: Items) => {
+    localStorage.setItem('selectedItemId', item.id);
+    localStorage.setItem('selectedItemName', item.name);
+    window.location.href = `/item-details?id=${item.id}`
+
+  };
+
+
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <>
+
+      <h1 className='text-center text-white'>Items Table</h1>
+      <div>
+        <div className='flex   flex-col '>
+
+          <table className='table-auto  border-solid border-3 border-sky-500    text-white w-1/4 m-auto mb-3'>
+            <thead>
+              <tr className='bg-slate-500'>
+                <th className=' p-2'>Id</th>
+                <th className=' p-2'>Name</th>
+                <th className='p-2'>Description</th>
+                <th className=' p-2'>Action</th>
+              </tr>
+            </thead>
+            <tbody className=' bg-slate-400'>
+              {items.map(item => (
+                <tr key={item.id}>
+                  <td className=' p-2 text-center'>{item.id}</td>
+                  <td className=' p-2 text-center'>{item.name}</td>
+                  <td className=' p-2 text-center'>Lorem, ipsum</td>
+                  <td className='flex gap-3 p-2 justify-center'>
+                    <button className='font-bold bg-blue-300 hover:bg-blue-600 hover:cursor-pointer border-0 p-2 rounded-md text-white'
+                      onClick={() => handleDetailsClick(item)}>
+                      Details
+                    </button>
+                    <button onClick={() => handleEditUser(item)} className=' bg-green-400 hover:bg-green-600 hover:cursor-pointer border-0 p-2 rounded-md'>
+                      <Link className=' font-bold no-underline text-white' href={`/update?id=${item.id}`}>
+                        Edit
+                      </Link>
+                    </button>
+                    <button
+                      className='font-bold bg-red-400 hover:bg-red-600 hover:cursor-pointer border-0 p-2 rounded-md text-white'
+                      onClick={() => { setDeleteModalOpen(true); setItemToDelete(item.id); }}>
+                      Delete
+                    </button>
+
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <button onClick={() => setNewItemModal(true)} className='font-bold bg-red-400 hover:bg-red-600 hover:cursor-pointer border-0 p-2 rounded-md text-white  w-32 m-auto'>
+            Add Item
+          </button>
         </div>
-      </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+        {/* Modal per aggiunta Item */}
+
+        {newItemModal && (
+          <div className="fixed inset-0 z-10 flex items-center justify-center bg-gray-800 bg-opacity-75  ">
+            <div className="p-6 rounded shadow-lg modal text-white">
+              <div>
+                <h3>
+                  Add a new Items
+                </h3>
+              </div>
+              <div className='flex flex-col gap-2'>
+                <label htmlFor="">Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter Name"
+                  value={newItem.name}
+                  onChange={e => setNewItem({ ...newItem, name: e.target.value })}
+                />
+                <div className="flex justify-end">
+                  <button
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-2 hover:cursor-pointer"
+                    onClick={() => setNewItemModal(false)}>Cancel</button>
+                  <button
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded hover:cursor-pointer"
+                    onClick={() => handleAddItem()}>
+                    Add Item
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* Modal per Eliminazione */}
+
+        {deleteModalOpen && (
+          <div className="fixed inset-0 z-10 flex items-center justify-center bg-gray-800 bg-opacity-75">
+            <div className=" text-white p-6 rounded shadow-lg modal">
+              <h3 className='text-center'>Warning!!!</h3>
+              <p className="mb-4">You want to delete this item?</p>
+              <div className="flex justify-center">
+                <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-2 font-bold hover:cursor-pointer" onClick={() => setDeleteModalOpen(false)}>Cancel</button>
+                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-bold hover:cursor-pointer" onClick={handleDeleteItem}>Delete</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal per i dettagli
+        {detailsModalOpen && selectedItem && (
+          <div className="fixed inset-0 z-10 flex items-center justify-center bg-gray-800 bg-opacity-75">
+            <div className="p-6 rounded shadow-lg modal text-white">
+              <h3>Item Details</h3>
+              <p><strong>ID:</strong> {selectedItem.id}</p>
+              <p><strong>Name:</strong> {selectedItem.name}</p>
+              <p><strong>Description:</strong> Lorem ipsum </p>
+              <div className="flex justify-center">
+                <button
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-2 hover:cursor-pointer font-bold"
+                  onClick={() => setDetailsModalOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )} */}
+
+        {/* <h2>Add User</h2>
+        <input
+          type="text"
+          placeholder="Name"
+          value={newUser.name}
+          onChange={e => setNewUser({ ...newUser, name: e.target.value })}
         />
-      </div>
+        <input
+          type="email"
+          placeholder="Email"
+          value={newUser.email}
+          onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+        />
+        <button onClick={handleAddUser}>Add User</button> */}
+      </div >
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      {/* Modal per confermare l'eliminazione */}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </>
   );
 }
+{/* <button onClick={() => handleEditUser(user)}>
+                <Link className=' no-underline text-black' href={`/update-${user.id}`}>
+                  Edit
+                </Link>
+              </button>
+              <button onClick={() => { setUserToDelete(user.id); setModalOpen(true); }}>Delete</button> */}
