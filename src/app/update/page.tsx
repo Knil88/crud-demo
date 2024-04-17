@@ -5,9 +5,10 @@ import Link from "next/link";
 
 
 
-interface Item {
+interface User {
     id: string,
     name: string,
+    email:string
 
 }
 export default function Update() {
@@ -15,38 +16,38 @@ export default function Update() {
 
 
 
-    const [item, setitems] = useState<Item>({ id: '', name: '' });
+    const [user, setUsers] = useState<User>({ id: '', name: '' ,email:''});
 
 
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const storedItem = localStorage.getItem('itemToEdit');
-            if (storedItem) {
-                setitems(JSON.parse(storedItem));
+            const storedUser = localStorage.getItem('userToEdit');
+            if (storedUser) {
+                setUsers(JSON.parse(storedUser));
             }
         }
 
-        if (item.id) { // Verifica se item.id è definito
-            fetch(`http://localhost:5000/items/${item.id}`)
+        if (user.id) { // Verifica se item.id è definito
+            fetch(`http://localhost:3000/users/${user.id}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch user data');
                     }
                     return response.json();
                 })
-                .then(data => setitems(data))
+                .then(data => setUsers(data))
                 .catch(error => console.error('Error fetching user data:', error));
         }
-    }, [item.id]);
+    }, [user.id]);
 
     const handleUpdateUser = () => {
-        fetch(`http://localhost:5000/items/${item.id}`, {
+        fetch(`http://localhost:3000/users/${user.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(item),
+            body: JSON.stringify(user),
         })
             .then(response => response.json())
             .then(data => {
@@ -67,12 +68,15 @@ export default function Update() {
             <div className="flex flex-col gap-1 w-96 m-auto justify-center bg-slate-500 p-3 rounded-md">
 
                 <label className=" text-white" htmlFor="">Name</label>
-                <input type="text" value={item.name} onChange={e => setitems({ ...item, name: e.target.value })} />
+                <input type="text" value={user.name} onChange={e => setUsers({ ...user, name: e.target.value })} />
+
+                <label className=" text-white" htmlFor="">Email</label>
+                <input type="text" value={user.email} onChange={e => setUsers({ ...user, email: e.target.value })} />
 
 
 
                 <div className="flex justify-center gap-1">
-                    <button className=" w-6/12 m-auto mt-1  bg-green-400 hover:bg-green-600 hover:cursor-pointer border-0 p-2 rounded-md text-white font-bold" onClick={handleUpdateUser}>Update Item</button>
+                    <button className=" w-6/12 m-auto mt-1  bg-green-400 hover:bg-green-600 hover:cursor-pointer border-0 p-2 rounded-md text-white font-bold" onClick={handleUpdateUser}>Update User</button>
                     <button className=" w-6/12 m-auto mt-1  bg-red-400 hover:bg-red-600 hover:cursor-pointer border-0 p-2 rounded-md  font-bold"><Link className=" no-underline text-white" href={"/"}>Return to Users</Link></button></div>
             </div>
 

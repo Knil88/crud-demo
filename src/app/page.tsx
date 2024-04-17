@@ -6,66 +6,67 @@ import { useState, useEffect } from 'react';
 
 
 
-interface Items {
+interface Users {
   id: string;
   name: string;
+  email:string;
 
 
 }
 
 export default function Home() {
-  const [items, setItems] = useState<Items[]>([]);
-  const [newItem, setNewItem] = useState<Items>({ id: '', name: '' });
+  const [users, setUsers] = useState<Users[]>([]);
+  const [newUser, setNewUser] = useState<Users>({ id: '', name: '' ,email:''});
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<string>('');
-  const [newItemModal, setNewItemModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Items | null>(null);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string>('');
+  const [newUserModal, setNewUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Users | null>(null);
+  
 
 
 
   useEffect(() => {
-    fetch('http://localhost:5000/items')
+    fetch('http://localhost:3000/users')
       .then(response => response.json())
-      .then(data => setItems(data))
+      .then(data => setUsers(data))
       .catch(error => console.error('Error fetching users:', error));
   }, []);
 
-  const handleEditUser = (item: Items) => {
-    localStorage.setItem('itemToEdit', JSON.stringify(item));
+  const handleEditUser = (user: Users) => {
+    localStorage.setItem('userToEdit', JSON.stringify(user));
   };
 
 
-  const handleAddItem = () => {
-    fetch('http://localhost:5000/items', {
+  const handleAddUser = () => {
+    fetch('http://localhost:3000/users', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(newItem),
+      body: JSON.stringify(newUser),
     })
       .then(response => response.json())
       .then(data => {
-        setItems([...items, data]);
-        setNewItem({ id: '', name: '' });
-        setNewItemModal(false);
+        setUsers([...users, data]);
+        setNewUser({ id: '', name: '', email:'' });
+        setNewUserModal(false);
 
       })
       .catch(error => console.error('Error adding user:', error));
   };
 
   const handleDeleteItem = () => {
-    fetch(`http://localhost:5000/items/${itemToDelete}`, {
+    fetch(`http://localhost:3000/users/${userToDelete}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ id: itemToDelete })
+      body: JSON.stringify({ id: userToDelete })
     })
       .then(response => {
         if (response.ok) {
-          setItems(prevItems => prevItems.filter(item => item.id !== itemToDelete));
-          setItemToDelete('');
+          setUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete));
+          setUserToDelete('');
           setDeleteModalOpen(false); // Chiudi il modal dopo aver eliminato l'utente
         } else {
           throw new Error('Failed to delete item');
@@ -74,10 +75,11 @@ export default function Home() {
       .catch(error => console.error('Error deleting user:', error));
   };
 
-  const handleDetailsClick = (item: Items) => {
-    localStorage.setItem('selectedItemId', item.id);
-    localStorage.setItem('selectedItemName', item.name);
-    window.location.href = `/item-details?id=${item.id}`
+  const handleDetailsClick = (user: Users) => {
+    localStorage.setItem('selectedUserId', user.id);
+    localStorage.setItem('selectedUserName', user.name);
+    localStorage.setItem('selectedUserEmail', user.email);
+    window.location.href = `/user-details?id=${user.id}`
 
   };
 
@@ -86,7 +88,7 @@ export default function Home() {
   return (
     <>
 
-      <h1 className='text-center text-white'>Items Table</h1>
+      <h1 className='text-center text-white'>Users Table</h1>
       <div>
         <div className='flex   flex-col '>
 
@@ -95,29 +97,29 @@ export default function Home() {
               <tr className='bg-slate-500'>
                 <th className=' p-2'>Id</th>
                 <th className=' p-2'>Name</th>
-                <th className='p-2'>Description</th>
+                <th className='p-2'>Email</th>
                 <th className=' p-2'>Action</th>
               </tr>
             </thead>
             <tbody className=' bg-slate-400'>
-              {items.map(item => (
-                <tr key={item.id}>
-                  <td className=' p-2 text-center'>{item.id}</td>
-                  <td className=' p-2 text-center'>{item.name}</td>
-                  <td className=' p-2 text-center'>Lorem, ipsum</td>
+              {users.map(user => (
+                <tr key={user.id}>
+                  <td className=' p-2 text-center'>{user.id}</td>
+                  <td className=' p-2 text-center'>{user.name}</td>
+                  <td className=' p-2 text-center'>{user.email}</td>
                   <td className='flex gap-3 p-2 justify-center'>
                     <button className='font-bold bg-blue-300 hover:bg-blue-600 hover:cursor-pointer border-0 p-2 rounded-md text-white'
-                      onClick={() => handleDetailsClick(item)}>
+                      onClick={() => handleDetailsClick(user)}>
                       Details
                     </button>
-                    <button onClick={() => handleEditUser(item)} className=' bg-green-400 hover:bg-green-600 hover:cursor-pointer border-0 p-2 rounded-md'>
-                      <Link className=' font-bold no-underline text-white' href={`/update?id=${item.id}`}>
+                    <button onClick={() => handleEditUser(user)} className=' bg-green-400 hover:bg-green-600 hover:cursor-pointer border-0 p-2 rounded-md'>
+                      <Link className=' font-bold no-underline text-white' href={`/update?id=${user.id}`}>
                         Edit
                       </Link>
                     </button>
                     <button
                       className='font-bold bg-red-400 hover:bg-red-600 hover:cursor-pointer border-0 p-2 rounded-md text-white'
-                      onClick={() => { setDeleteModalOpen(true); setItemToDelete(item.id); }}>
+                      onClick={() => { setDeleteModalOpen(true); setUserToDelete(user.id); }}>
                       Delete
                     </button>
 
@@ -126,19 +128,19 @@ export default function Home() {
               ))}
             </tbody>
           </table>
-          <button onClick={() => setNewItemModal(true)} className='font-bold bg-red-400 hover:bg-red-600 hover:cursor-pointer border-0 p-2 rounded-md text-white  w-32 m-auto'>
+          <button onClick={() => setNewUserModal(true)} className='font-bold bg-red-400 hover:bg-red-600 hover:cursor-pointer border-0 p-2 rounded-md text-white  w-32 m-auto'>
             Add Item
           </button>
         </div>
 
         {/* Modal per aggiunta Item */}
 
-        {newItemModal && (
+        {newUserModal && (
           <div className="fixed inset-0 z-10 flex items-center justify-center bg-gray-800 bg-opacity-75  ">
             <div className="p-6 rounded shadow-lg modal text-white">
               <div>
                 <h3>
-                  Add a new Items
+                  Add a new User
                 </h3>
               </div>
               <div className='flex flex-col gap-2'>
@@ -146,17 +148,25 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="Enter Name"
-                  value={newItem.name}
-                  onChange={e => setNewItem({ ...newItem, name: e.target.value })}
+                  value={newUser.name}
+                  onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                />
+
+                <label htmlFor="">Email</label>
+                <input
+                  type="email"
+                  placeholder="Enter Email"
+                  value={newUser.email}
+                  onChange={e => setNewUser({ ...newUser, email: e.target.value })}
                 />
                 <div className="flex justify-end">
                   <button
                     className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mr-2 hover:cursor-pointer"
-                    onClick={() => setNewItemModal(false)}>Cancel</button>
+                    onClick={() => setNewUserModal(false)}>Cancel</button>
                   <button
                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded hover:cursor-pointer"
-                    onClick={() => handleAddItem()}>
-                    Add Item
+                    onClick={() => handleAddUser()}>
+                    Add User
                   </button>
                 </div>
               </div>
